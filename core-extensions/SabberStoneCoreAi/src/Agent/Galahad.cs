@@ -115,6 +115,7 @@ namespace SabberStoneCoreAi.Agent
 			Console.ResetColor();
 
 			File.AppendAllText(Directory.GetCurrentDirectory() + @"\"+logFileName, str.ToString());
+			File.AppendAllText(Directory.GetCurrentDirectory() + @"\" + "dump.log", str.ToString());
 		}
 	}
 }

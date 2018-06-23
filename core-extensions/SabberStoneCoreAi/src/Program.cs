@@ -4,6 +4,7 @@ using SabberStoneCore.Enums;
 using SabberStoneCoreAi.POGame;
 using SabberStoneCoreAi.Agent.ExampleAgents;
 using SabberStoneCoreAi.Agent;
+using SabberStoneCoreAi.Meta;
 
 namespace SabberStoneCoreAi
 {
@@ -20,7 +21,13 @@ namespace SabberStoneCoreAi
 			{
 				StartPlayer = 1,
 				Player1HeroClass = CardClass.MAGE,
-				Player2HeroClass = CardClass.HUNTER,
+				Player1Deck = Decks.RenoKazakusMage,
+				// Player1Deck = Decks.AggroPirateWarrior,					
+				// Player1Deck = Decks.MidrangeJadeShaman,
+				Player2HeroClass = CardClass.MAGE,
+				Player2Deck = Decks.RenoKazakusMage,
+				// Player2Deck = Decks.AggroPirateWarrior,					
+				// Player2Deck = Decks.MidrangeJadeShaman,
 				FillDecks = true,
 				Logging = true
 			};
