@@ -20,13 +20,13 @@ namespace SabberStoneCoreAi
 			{
 				StartPlayer = 1,
 				Player1HeroClass = CardClass.MAGE,
-				Player2HeroClass = CardClass.MAGE,
+				Player2HeroClass = CardClass.HUNTER,
 				FillDecks = true,
-				Logging = false
+				Logging = true
 			};
 
 			Console.WriteLine("Setup POGameHandler");
-			AbstractAgent player1 = new FaceHunter();
+			AbstractAgent player1 = new Galahad();
 			AbstractAgent player2 = new FaceHunter();
 			var gameHandler = new POGameHandler(gameConfig, player1, player2, debug:true);
 

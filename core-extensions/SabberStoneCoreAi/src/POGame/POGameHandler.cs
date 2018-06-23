@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using SabberStoneCore.Config;
 using SabberStoneCore.Enums;
@@ -6,6 +6,9 @@ using SabberStoneCore.Model;
 using SabberStoneCore.Model.Entities;
 using SabberStoneCore.Tasks;
 using SabberStoneCoreAi.Agent;
+
+using System.Text;
+using System.IO;
 
 namespace SabberStoneCoreAi.POGame
 {
@@ -35,6 +38,9 @@ namespace SabberStoneCoreAi.POGame
 
 			gameStats = new GameStats();
 			this.debug = debug;
+
+			// empty the logfile
+			File.WriteAllText(Directory.GetCurrentDirectory() + @"\dump.log", "Starting new Log\n");
 		}
 
 		public bool PlayGame(bool addToGameStats=true)
@@ -54,13 +60,13 @@ namespace SabberStoneCoreAi.POGame
 			{
 				while (game.State != State.COMPLETE && game.State != State.INVALID)
 				{
-					if (debug)
-						Console.WriteLine("Turn " + game.Turn);
+					if (gameConfig.Logging)
+						game.Log(LogLevel.INFO, BlockType.SCRIPT, "POGameHandler", "Turn " + game.Turn);
 
 					currentAgent = game.CurrentPlayer == game.Player1 ? player1 : player2;
 					Controller currentPlayer = game.CurrentPlayer;
 					currentStopwatch = game.CurrentPlayer == game.Player1 ? watches[0] : watches[1];
-					poGame = new POGame(game, debug);
+					poGame = new POGame(game, gameConfig.Logging);
 
 					currentStopwatch.Start();
 					playertask = currentAgent.GetMove(poGame);
@@ -69,9 +75,10 @@ namespace SabberStoneCoreAi.POGame
 					game.CurrentPlayer.Game = game;
 					game.CurrentOpponent.Game = game;
 
-					if (debug)
-						Console.WriteLine(playertask);
+					if (gameConfig.Logging)
+						game.Log(LogLevel.INFO, BlockType.SCRIPT, "POGameHandler", playertask.ToString());
 					game.Process(playertask);
+					ShowLog(game, gameConfig, LogLevel.INFO);
 				}
 			}
 			catch (Exception e)
@@ -110,6 +117,55 @@ namespace SabberStoneCoreAi.POGame
 		public GameStats getGameStats()
 		{
 			return gameStats;
+		}
+
+
+		internal static void ShowLog(Game game, GameConfig gameConfig, LogLevel level)
+		{
+			var str = new StringBuilder();
+			while (game.Logs.Count > 0)
+			{
+				LogEntry logEntry = game.Logs.Dequeue();
+				if (logEntry.Level <= level)
+				{
+					ConsoleColor foreground = ConsoleColor.White;
+					switch (logEntry.Level)
+					{
+						case LogLevel.DUMP:
+							foreground = ConsoleColor.DarkCyan;
+							break;
+						case LogLevel.ERROR:
+							foreground = ConsoleColor.Red;
+							break;
+						case LogLevel.WARNING:
+							foreground = ConsoleColor.DarkRed;
+							break;
+						case LogLevel.INFO:
+							foreground = logEntry.Location.Equals("Game") ? ConsoleColor.Yellow :
+										 logEntry.Location.StartsWith("Quest") ? ConsoleColor.Cyan :
+										 ConsoleColor.Green;
+							break;
+						case LogLevel.VERBOSE:
+							foreground = ConsoleColor.DarkGreen;
+							break;
+						case LogLevel.DEBUG:
+							foreground = ConsoleColor.DarkGray;
+							break;
+						default:
+							throw new ArgumentOutOfRangeException();
+					}
+
+					Console.ForegroundColor = foreground;
+
+					string logStr = $"{logEntry.TimeStamp.ToLongTimeString()} - {logEntry.Level} [{logEntry.BlockType}] - {logEntry.Location}: {logEntry.Text}";
+					str.Append(logStr + "\n");
+					if(gameConfig.Logging == true)
+						Console.WriteLine(logStr);
+				}
+			}
+			Console.ResetColor();
+
+			File.AppendAllText(Directory.GetCurrentDirectory() + @"\dump.log", str.ToString());
 		}
 	}
 
