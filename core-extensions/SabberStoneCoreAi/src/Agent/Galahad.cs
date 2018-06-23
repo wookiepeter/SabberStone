@@ -1,16 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using SabberStoneCore.Tasks;
 using SabberStoneCoreAi.Agent;
 using SabberStoneCoreAi.POGame;
-using SabberStoneCore.Model;
 
+// Required for Logger
 using System.Text;
+using SabberStoneCore.Model;
+using SabberStoneCore.Model.Entities;
+using SabberStoneCore.Model.Zones;
 using System.IO;
 
 namespace SabberStoneCoreAi.Agent
 {
+	class BoardStats
+	{
+		public BoardStats(POGame.POGame poGame)
+		{
+			
+		}
+
+		public float getValue()
+		{
+			float value = 0;
+			return value;
+		}
+	}
+
     class Galahad : AbstractAgent
 	{
 		private Random Rnd = new Random();
@@ -30,7 +46,20 @@ namespace SabberStoneCoreAi.Agent
 
 		public override PlayerTask GetMove(SabberStoneCoreAi.POGame.POGame poGame)
 		{
+			foreach(PlayerTask task in poGame.CurrentPlayer.Options())
+			{
+				Log(LogLevel.INFO, getStringFromPlayerTask(task));
+			}
+			
 			return poGame.CurrentPlayer.Options()[Rnd.Next(poGame.CurrentPlayer.Options().Count)];
+		}
+
+
+
+		string getStringFromPlayerTask(PlayerTask task)
+		{
+			string result = task.FullPrint();
+			return result;
 		}
 
 		public override void InitializeAgent()
