@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using SabberStoneCoreAi.Score;
+using System.Linq;
 
 using System.IO;
 using Newtonsoft.Json;
@@ -70,15 +71,34 @@ namespace SabberStoneCoreAi.Agent
 		public ScoreMatrix(List<ScoreParameter> scoreParameters, string fileName, bool loadFromFile = true)
 		{
 			this.loadFromFile = loadFromFile;
-			if (this.loadFromFile)
-			{
-				dataFileName = dataString + "_" + fileName;
-				propertyFileName = propertyString + "_" + fileName + ".json";
-			}
-			else
-			{
+			dataFileName = dataString + "_" + fileName;
+			propertyFileName = propertyString + "_" + fileName + ".json";
 
+			InitPropertiesAndValues(scoreParameters);
+		}
+
+		public void SaveScoreMatrix()
+		{
+			SaveMatrixPropertiesToFile(propertyFileName, parameters);
+			SaveScoreMatrixToFile(dataFileName);
+		}
+
+		void InitPropertiesAndValues(List<ScoreParameter> scoreParameters)
+		{
+			bool canLoadFromFile = false;
+			if (this.loadFromFile && CheckIfFilesExist())
+			{
+				List<ScoreParameter> loadedParameters = LoadMatrixPropertiesFromFile(propertyFileName);
+				if (loadedParameters.SequenceEqual<ScoreParameter>(parameters))
+				{
+					canLoadFromFile = true;
+				}
+				else
+				{
+					Console.WriteLine("File " + dataFileName + " does not contain proper Parameters ");
+				}
 			}
+
 			parameters = scoreParameters;
 			lengths = new int[parameters.Count];
 			int totalArrayLength = 1;
@@ -88,24 +108,30 @@ namespace SabberStoneCoreAi.Agent
 				lengths[i] = param.DiscreteValues;
 				totalArrayLength *= param.DiscreteValues;
 			}
-			values = new float[totalArrayLength];
+			if (canLoadFromFile == false)
+			{
+				values = new float[totalArrayLength];
+			}
+			else
+			{
+				LoadScoreMatrixFromFile(dataFileName);
+			}
 		}
 
-		public List<ScoreParameter> LoadMatrixPropertiesFromFile(string fileName)
+		List<ScoreParameter> LoadMatrixPropertiesFromFile(string fileName)
 		{
 			string fileText = File.ReadAllText(Directory.GetCurrentDirectory() + @"\" + propertyFileName);
 			List<ScoreParameter> result = JsonConvert.DeserializeObject < List<ScoreParameter> >(fileText);
 			return result;
 		}
 
-		public void SaveMatrixPropertiesToFile(string fileName, List<ScoreParameter> parameters)
+		void SaveMatrixPropertiesToFile(string fileName, List<ScoreParameter> parameters)
 		{
 			string matrixParameters = JsonConvert.SerializeObject(parameters, Formatting.Indented);
 			File.WriteAllText(Directory.GetCurrentDirectory() + @"\" + propertyFileName, matrixParameters);
 		}
 
-
-		public void LoadScoreMatrixFromFile(string fileName)
+		void LoadScoreMatrixFromFile(string fileName)
 		{
 			IFormatter formatter = new BinaryFormatter();
 			Stream stream = new FileStream(Directory.GetCurrentDirectory() + @"\" + dataFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -113,12 +139,17 @@ namespace SabberStoneCoreAi.Agent
 			stream.Close();
 		}
 
-		public void SaveScoreMatrixToFile(string fileName)
+		void SaveScoreMatrixToFile(string fileName)
 		{
 			IFormatter formatter = new BinaryFormatter();
 			Stream stream = new FileStream(Directory.GetCurrentDirectory() + @"\" + dataFileName, FileMode.Create, FileAccess.Write, FileShare.None);
 			formatter.Serialize(stream, values);
 			stream.Close();
+		}
+
+		bool CheckIfFilesExist()
+		{
+			return File.Exists(Directory.GetCurrentDirectory() + @"\" + propertyFileName) && File.Exists(Directory.GetCurrentDirectory() + @"\" + propertyFileName);
 		}
 
 		public void UpdateScoreMatrix(int[] values)
