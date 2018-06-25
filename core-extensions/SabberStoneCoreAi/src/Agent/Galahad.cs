@@ -46,15 +46,76 @@ namespace SabberStoneCoreAi.Agent
 
 		public override PlayerTask GetMove(SabberStoneCoreAi.POGame.POGame poGame)
 		{
-			foreach(PlayerTask task in poGame.CurrentPlayer.Options())
+			List<PlayerTask> options = poGame.CurrentPlayer.Options();
+
+			List<float[]> optionRatings = new List<float[]>();
+
+			optionRatings.Add(RandomOptionRating(poGame, options));
+
+
+			List<float> inputValues = new List<float>() { 1 };
+			for (int i = 0; i < optionRatings.Count; i++)
 			{
-				Log(LogLevel.INFO, getStringFromPlayerTask(task));
+				optionRatings[i] = VectorMult(optionRatings[i], inputValues[i]);
 			}
-			
-			return poGame.CurrentPlayer.Options()[Rnd.Next(poGame.CurrentPlayer.Options().Count)];
+			float[] result = VectorAdd(optionRatings);
+
+			List<int> bestOptionIndices = GetBestOptionsIndices(result, options);
+
+			return options[bestOptionIndices[0]];
 		}
 
+		List<int> GetBestOptionsIndices(float[] array, List<PlayerTask> options)
+		{
+			float currentMax = -1;
+			List<int> bestOptionIndices = new List<int>();
+			for (int i = 0; i < array.Length; i++)
+			{
+				if (array[i] > currentMax)
+				{
+					bestOptionIndices.Clear();
+					currentMax = array[i];
+					bestOptionIndices.Add(i);
+				}
+				else if (array[i] == currentMax)
+				{
+					bestOptionIndices.Add(i);
+				}
+			}
+			return bestOptionIndices;
+		}
 
+		float[] VectorMult(float[] array, float value)
+		{
+			for (int i = 0; i < array.Length; i++)
+			{
+				array[i] *= value;
+			}
+			return array;
+		}
+
+		float[] VectorAdd(List<float[]> arrayList)
+		{
+			int arrayLength = arrayList[0].Length;
+			float[] result = new float[arrayLength];
+			for (int i = 0; i < arrayLength; i++)
+			{
+				for (int j = 0; j < arrayList.Count; j++)
+				{
+					result[i] += arrayList[j][i];
+				}
+			}
+			return result;
+		}
+
+		float[] RandomOptionRating(SabberStoneCoreAi.POGame.POGame poGame, List<PlayerTask> playerTasks)
+		{
+			float[] result = new float[playerTasks.Count];
+
+			result[Rnd.Next(playerTasks.Count)] = 1;
+
+			return result;
+		}
 
 		string getStringFromPlayerTask(PlayerTask task)
 		{
