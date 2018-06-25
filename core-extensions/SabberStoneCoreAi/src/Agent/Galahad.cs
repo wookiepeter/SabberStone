@@ -13,20 +13,6 @@ using System.IO;
 
 namespace SabberStoneCoreAi.Agent
 {
-	class BoardStats
-	{
-		public BoardStats(POGame.POGame poGame)
-		{
-			
-		}
-
-		public float getValue()
-		{
-			float value = 0;
-			return value;
-		}
-	}
-
     class Galahad : AbstractAgent
 	{
 		private Random Rnd = new Random();
@@ -45,7 +31,7 @@ namespace SabberStoneCoreAi.Agent
 		public override void FinalizeGame()
 		{
 			Log(LogLevel.INFO, "Game is over");
-			gameStateScoreMatrix.SaveScoreMatrix();
+			//gameStateScoreMatrix.SaveScoreMatrix();
 		}
 
 		public override PlayerTask GetMove(SabberStoneCoreAi.POGame.POGame poGame)
@@ -64,7 +50,11 @@ namespace SabberStoneCoreAi.Agent
 			}
 			float[] result = VectorAdd(optionRatings);
 
+			Log(LogLevel.INFO, "Array of Length: " + result.Length + " with elements: " + result.ToString());
+
 			List<int> bestOptionIndices = GetBestOptionsIndices(result, options);
+
+
 
 			return options[bestOptionIndices[0]];
 		}
@@ -143,7 +133,7 @@ namespace SabberStoneCoreAi.Agent
 		void Log(LogLevel level, string text)
 		{
 			var str = new StringBuilder();
-				if (logLevel <= level)
+				if (logLevel >= level)
 				{
 					ConsoleColor foreground = ConsoleColor.White;
 					switch (level)
