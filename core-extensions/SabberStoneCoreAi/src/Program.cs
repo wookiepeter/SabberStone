@@ -33,7 +33,7 @@ namespace SabberStoneCoreAi
 			};
 
 			Console.WriteLine("Setup POGameHandler");
-			AbstractAgent player1 = new Galahad();
+			AbstractAgent player1 = new TheTrueGalahad();
 			AbstractAgent player2 = new FaceHunter();
 			var gameHandler = new POGameHandler(gameConfig, player1, player2, debug:true);
 
