@@ -35,13 +35,17 @@ namespace SabberStoneCoreAi.Agent
 		LogLevel logLevel = LogLevel.INFO;
 		string logFileName = "agent_Name_dump.log";
 
+		ScoreMatrix gameStateScoreMatrix;
+
 		public override void FinalizeAgent()
 		{
+
 		}
 
 		public override void FinalizeGame()
 		{
 			Log(LogLevel.INFO, "Game is over");
+			gameStateScoreMatrix.SaveScoreMatrix();
 		}
 
 		public override PlayerTask GetMove(SabberStoneCoreAi.POGame.POGame poGame)
