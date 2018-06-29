@@ -495,7 +495,7 @@ namespace SabberStoneCore.Model.Entities
 							break;
 
 						default:
-							Game.Log(LogLevel.ERROR, BlockType.PLAY, "Playable", !Game.Logging ? "" : $"PlayReq {req} not in switch needs to be added (Playable)!");
+							Game.Log(LogLevel.INFO, BlockType.PLAY, "Playable", !Game.Logging ? "" : $"PlayReq {req} not in switch needs to be added (Playable)!");
 							break;
 					}
 				}

@@ -78,7 +78,7 @@ namespace SabberStoneCoreAi.POGame
 					if (gameConfig.Logging)
 						game.Log(LogLevel.INFO, BlockType.SCRIPT, "POGameHandler", playertask.ToString());
 					game.Process(playertask);
-					ShowLog(game, gameConfig, LogLevel.INFO);
+					ShowLog(game, gameConfig, LogLevel.WARNING);
 				}
 			}
 			catch (Exception e)

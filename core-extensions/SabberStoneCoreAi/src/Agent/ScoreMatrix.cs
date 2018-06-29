@@ -19,9 +19,10 @@ namespace SabberStoneCoreAi.Agent
 		/// <param name="name">Name of this Parameter</param>
 		/// <param name="minAmount">inclusive</param>
 		/// <param name="maxAmount">inclusive</param>
-		/// <param name="splitAmount">number of discretes parts for this parameter</param>
-		public ScoreParameter(string name, int minAmount, int maxAmount, int splitAmount = 10) 
+		/// <param name="splitAmount">number of discretes parts for this parameter, always adds one more area for 0 (because math)</param>
+		public ScoreParameter(string name, int minAmount, int maxAmount, int splitAmount = 10, bool zeroSlot = false) 
 		{
+			this.Name = name;
 			this.min = minAmount;
 			this.max = maxAmount;
 			this.DiscreteValues = splitAmount;
@@ -29,13 +30,20 @@ namespace SabberStoneCoreAi.Agent
 			if (diff % DiscreteValues != 0)
 				Console.WriteLine("Parameter " + name + " is not really well discretized");
 			discreteDiff = diff / DiscreteValues;
+			if (zeroSlot == true)
+				DiscreteValues += 1;
 		}
 
-		int min;
-		int max;
-		int diff;
+		public ScoreParameter()
+		{
+
+		}
+
+		public int min;
+		public int max;
+		public int diff;
 		public int DiscreteValues;
-		int discreteDiff;
+		public int discreteDiff;
 		public string Name;
 
 		public int GetIndex(int value)
@@ -48,9 +56,13 @@ namespace SabberStoneCoreAi.Agent
 		public int CompareTo(ScoreParameter other)
 		{
 			if (this.min == other.min && this.max == other.max && this.DiscreteValues == other.DiscreteValues && this.Name.Equals(other.Name))
+			{
 				return 0;
+			}
 			else
+			{
 				return 1;
+			}
 		}
 	}
 
@@ -67,6 +79,8 @@ namespace SabberStoneCoreAi.Agent
 		private string propertyFileName;
 
 		private List<ScoreParameter> parameters;
+
+		List<int> visitedIndices;
 
 		public ScoreMatrix(List<ScoreParameter> scoreParameters, string fileName, bool loadFromFile = true)
 		{
@@ -89,7 +103,14 @@ namespace SabberStoneCoreAi.Agent
 			if (this.loadFromFile && CheckIfFilesExist())
 			{
 				List<ScoreParameter> loadedParameters = LoadMatrixPropertiesFromFile(propertyFileName);
-				if (loadedParameters.SequenceEqual<ScoreParameter>(parameters))
+				// I do hate Sequencial Comparisons... 
+				bool parametersAreEqual = scoreParameters.Count == loadedParameters.Count;
+				for(int i = 0; i < scoreParameters.Count; i++)
+				{
+					if (scoreParameters[i].CompareTo(loadedParameters[i]) != 0)
+						parametersAreEqual = false;
+				}
+				if (parametersAreEqual)
 				{
 					canLoadFromFile = true;
 				}
@@ -101,13 +122,14 @@ namespace SabberStoneCoreAi.Agent
 
 			parameters = scoreParameters;
 			lengths = new int[parameters.Count];
-			int totalArrayLength = 1;
+			long totalArrayLength = 1;
 			for (int i = 0; i < parameters.Count; i++)
 			{
 				ScoreParameter param = parameters[i];
 				lengths[i] = param.DiscreteValues;
-				totalArrayLength *= param.DiscreteValues;
+				totalArrayLength *= lengths[i];
 			}
+
 			if (canLoadFromFile == false)
 			{
 				values = new float[totalArrayLength];
@@ -116,6 +138,7 @@ namespace SabberStoneCoreAi.Agent
 			{
 				LoadScoreMatrixFromFile(dataFileName);
 			}
+			visitedIndices = new List<int>();
 		}
 
 		List<ScoreParameter> LoadMatrixPropertiesFromFile(string fileName)
@@ -133,26 +156,61 @@ namespace SabberStoneCoreAi.Agent
 
 		void LoadScoreMatrixFromFile(string fileName)
 		{
+			Console.WriteLine("Loading ScoreMatrix from " + dataFileName);
 			IFormatter formatter = new BinaryFormatter();
 			Stream stream = new FileStream(Directory.GetCurrentDirectory() + @"\" + dataFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
 			values = (float[])formatter.Deserialize(stream);
 			stream.Close();
+
+			SaveScoreMatrixToFile(fileName + "_backup");
 		}
 
 		void SaveScoreMatrixToFile(string fileName)
 		{
+			Console.WriteLine("Saving Score Matrix to file " + fileName);
+
 			IFormatter formatter = new BinaryFormatter();
-			Stream stream = new FileStream(Directory.GetCurrentDirectory() + @"\" + dataFileName, FileMode.Create, FileAccess.Write, FileShare.None);
+			Stream stream = new FileStream(Directory.GetCurrentDirectory() + @"\" + fileName, FileMode.Create, FileAccess.Write, FileShare.None);
 			formatter.Serialize(stream, values);
 			stream.Close();
 		}
 
 		bool CheckIfFilesExist()
 		{
-			return File.Exists(Directory.GetCurrentDirectory() + @"\" + propertyFileName) && File.Exists(Directory.GetCurrentDirectory() + @"\" + propertyFileName);
+			return File.Exists(Directory.GetCurrentDirectory() + @"\" + propertyFileName) && File.Exists(Directory.GetCurrentDirectory() + @"\" + dataFileName);
 		}
 
-		public void UpdateScoreMatrix(int[] values)
+		public float GetScoreFromMatrix(int[] values)
+		{
+			int index = ComputeIndexFromValues(values);
+
+			return this.values[index];
+		}
+
+		/// <summary>
+		/// Adds a state in the matrix to the visited states
+		/// </summary>
+		/// <param name="values"></param>
+		public void VisitState(int[] values)
+		{
+			visitedIndices.Add(ComputeIndexFromValues(values));
+		}
+
+		/// <summary>
+		/// Updates the Score Matrix after the game has ended
+		/// </summary>
+		/// <param name="reward"></param>
+		public void UpdateScoreMatrix(float reward, float alpha)
+		{
+			foreach (int index in visitedIndices)
+			{
+				// using Constant Alpha Monte carlo Method
+				values[index] += alpha * (reward - values[index]);
+			}
+			visitedIndices.Clear();
+		}
+
+		int ComputeIndexFromValues(int[] values)
 		{
 			if (values.Length != parameters.Count)
 				throw new Exception("InvalidNumberOfValues");
@@ -161,9 +219,7 @@ namespace SabberStoneCoreAi.Agent
 			{
 				indices[i] = parameters[i].GetIndex(values[i]);
 			}
-			int index = NDToOneD(indices, lengths);
-
-			float score = values[index];
+			return NDToOneD(indices, lengths);
 		}
 
 		int NDToOneD(int[] indices, int[] lengths)

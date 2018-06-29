@@ -50,7 +50,7 @@ namespace SabberStoneCore.Tasks.SimpleTasks
 
 				int amount = Amount + randAmount;
 
-				Game.Log(LogLevel.WARNING, BlockType.ACTION, "DamageTask", !Game.Logging? "":$"Amount is {amount} damage of {Source}.");
+				Game.Log(LogLevel.INFO, BlockType.ACTION, "DamageTask", !Game.Logging? "":$"Amount is {amount} damage of {Source}.");
 
 				Generic.DamageCharFunc.Invoke(Source as IPlayable, entities[i] as ICharacter, amount, SpellDmg);
 			};
